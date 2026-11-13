@@ -1,0 +1,243 @@
+<!doctype html>
+<!-- Girdish dashboard: one summary card, then one card per spare machine. Served by
+     `girdish.py dashboard` on localhost; reads /status.json. Cards fill the window
+     (3 columns wide, 2 medium, 1 narrow) and each card scales its text to its size. -->
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Girdish</title>
+<link rel="icon" type="image/svg+xml" href="/logo.svg">
+<style>
+:root {
+  --page: #f3f4f7; --card: #ffffff; --line: #e5e7eb; --line-strong: #d1d5db;
+  --text: #111418; --text-2: #3f4650; --text-3: #6b7380;
+  --green: #16a34a; --green-soft: #e8f7ee; --amber: #c27803; --amber-soft: #fdf4e3;
+  --red: #dc2626; --red-soft: #fdecec; --blue: #2563eb; --track: #eceef2;
+  --gap: 14px; --pad: 16px;
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; min-height: 100%; background: var(--page); color: var(--text); }
+body { font-family: "Segoe UI Variable Text", "Segoe UI", system-ui, -apple-system, sans-serif; -webkit-font-smoothing: antialiased; line-height: 1.35; padding: var(--pad); }
+.num { font-variant-numeric: tabular-nums; }
+
+/* Cards fill the window: 3 columns wide, 2 medium, 1 narrow (scrolling). JS sets --rows. */
+.grid { --cols: 3; --rows: 2; display: grid; gap: var(--gap);
+  grid-template-columns: repeat(var(--cols), minmax(0, 1fr));
+  grid-auto-rows: max(calc((100vh - 2 * var(--pad) - (var(--rows) - 1) * var(--gap)) / var(--rows)), 300px); }
+@media (max-width: 1150px) { .grid { --cols: 2; } }
+@media (max-width: 700px) { .grid { --cols: 1; } }
+
+/* Each card sizes its own text from its width and height, so a bigger window reads bigger. */
+.card { container-type: size; background: var(--card); border: 1px solid var(--line); border-radius: 14px;
+  box-shadow: 0 1px 2px rgba(16,24,40,.04), 0 3px 10px rgba(16,24,40,.04); overflow: hidden; }
+.inner { height: 100%; display: flex; flex-direction: column; padding: 1em 1.15em 1em;
+  font-size: clamp(12px, min(3.05cqi, 4.1cqh), 22px); }
+.card.offline .inner > :not(.head) { opacity: .55; }
+
+.head { display: flex; align-items: center; gap: .5em; flex: none; }
+.head h2 { margin: 0; font: 650 1.55em/1 "Segoe UI Variable Display", "Segoe UI", system-ui, -apple-system, sans-serif; letter-spacing: -.01em; white-space: nowrap; }
+.head .hw { color: var(--text-3); font-size: .85em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.head .spacer { flex: 1; }
+.head .time { color: var(--text-3); font-size: .78em; }
+.pill { display: inline-flex; align-items: center; gap: .35em; font-size: .78em; font-weight: 600; border-radius: 999px; padding: .15em .65em; white-space: nowrap; }
+.pill::before { content: ""; width: .5em; height: .5em; border-radius: 50%; background: currentColor; }
+.pill.green { color: var(--green); background: var(--green-soft); } .pill.amber { color: var(--amber); background: var(--amber-soft); }
+.pill.red { color: var(--red); background: var(--red-soft); } .pill.grey { color: var(--text-3); background: var(--track); }
+
+.top { display: flex; align-items: center; gap: 1em; margin-top: .85em; flex: none; }
+.gauges { display: flex; gap: .9em; flex: none; }
+.gauge { --size: min(22cqi, 23cqh); width: var(--size); text-align: center; }
+.ring { position: relative; width: var(--size); height: var(--size); }
+.ring::before { content: ""; position: absolute; inset: 0; border-radius: 50%;
+  background: conic-gradient(var(--c) calc(var(--v) * 1%), var(--track) 0);
+  -webkit-mask: radial-gradient(farthest-side, transparent calc(100% - .5em), #000 calc(100% - .45em));
+          mask: radial-gradient(farthest-side, transparent calc(100% - .5em), #000 calc(100% - .45em)); }
+.ring b { position: absolute; inset: 0; display: grid; place-items: center; font: 650 calc(var(--size) * .25)/1 "Segoe UI Variable Display", "Segoe UI", system-ui, -apple-system, sans-serif; letter-spacing: -.02em; }
+.gauge .cap { margin-top: .3em; font-size: .78em; color: var(--text-2); font-weight: 650; line-height: 1.2; }
+.gauge .cap span { display: block; font-weight: 400; color: var(--text-3); }
+.facts { flex: 1; min-width: 0; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: .5em .9em; }
+.fact .k { color: var(--text-3); font-size: .7em; text-transform: uppercase; letter-spacing: .05em; font-weight: 650; }
+.fact .v { font-size: 1.05em; font-weight: 650; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.fact .v small { font-weight: 400; color: var(--text-3); font-size: .78em; }
+.fact.warn .v { color: var(--amber); } .fact.bad .v { color: var(--red); }
+
+/* The agents section takes the rest of the card and scrolls only if it really must. */
+.section { margin-top: .85em; padding-top: .7em; border-top: 1px solid var(--line); flex: 1; min-height: 0; overflow: auto; scrollbar-width: thin; }
+.section h3 { margin: 0 0 .45em; font-size: .72em; text-transform: uppercase; letter-spacing: .06em; color: var(--text-3); font-weight: 650; }
+.section h3 span { color: var(--text-2); margin-left: .35em; }
+.chips { display: flex; flex-wrap: wrap; gap: .35em; }
+.chip { display: inline-flex; align-items: center; gap: .4em; border: 1px solid var(--line); background: #f9fafb; border-radius: .55em; padding: .2em .55em; font-size: .9em; max-width: 100%; }
+.chip .name { font-weight: 650; white-space: nowrap; }
+.chip .meta { color: var(--text-3); white-space: nowrap; }
+.dot { width: .5em; height: .5em; border-radius: 50%; flex: none; }
+.dot.green { background: var(--green); } .dot.amber { background: var(--amber); } .dot.grey { background: var(--text-3); }
+.empty { color: var(--text-3); font-size: .88em; }
+.notes { display: block; margin-top: .45em; font-size: .8em; color: var(--text-2); line-height: 1.45; }
+.notes span + span::before { content: " · "; color: var(--line-strong); }
+.notes .warn { color: var(--amber); } .notes .bad { color: var(--red); }
+
+/* Summary card: brand, totals and which machines have room. */
+.brand { display: flex; align-items: center; gap: .55em; }
+.logo { width: 1.7em; height: 1.7em; flex: none; display: block; }
+.updated { color: var(--text-3); font-size: .8em; }
+.updated.stale { color: var(--red); font-weight: 650; }
+.switch { position: relative; width: 2.3em; height: 1.3em; flex: none; cursor: pointer; }
+.switch input { opacity: 0; width: 0; height: 0; position: absolute; }
+.switch span { position: absolute; inset: 0; border-radius: 999px; background: var(--line-strong); transition: background .15s; }
+.switch span::after { content: ""; position: absolute; top: .15em; left: .15em; width: 1em; height: 1em; border-radius: 50%; background: #fff; box-shadow: 0 1px 2px rgba(0,0,0,.25); transition: transform .15s; }
+.switch input:checked + span { background: var(--blue); }
+.switch input:checked + span::after { transform: translateX(1em); }
+.kpis { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: .9em 1.2em; margin-top: 1em; flex: 1; align-content: start; }
+.kpi .label { color: var(--text-3); font-size: .72em; text-transform: uppercase; letter-spacing: .05em; font-weight: 650; }
+.kpi .value { font: 650 1.9em/1.1 "Segoe UI Variable Display", "Segoe UI", system-ui, -apple-system, sans-serif; letter-spacing: -.02em; margin-top: .1em; }
+.kpi .value small { font-size: .45em; font-weight: 500; color: var(--text-3); letter-spacing: 0; margin-left: .3em; }
+.kpi .sub { color: var(--text-3); font-size: .78em; }
+.bar { height: .4em; border-radius: 999px; background: var(--track); overflow: hidden; margin: .4em 0 .25em; }
+.bar i { display: block; height: 100%; border-radius: 999px; }
+.room { flex: none; border-top: 1px solid var(--line); padding-top: .75em; margin-top: .6em; }
+.room .title { font-weight: 650; font-size: .9em; margin-bottom: .4em; }
+.error { color: var(--red); font-size: .78em; margin-top: .3em; }
+</style>
+</head>
+<body>
+<main class="grid" id="grid">
+  <article class="card" data-key="summary"><div class="inner">
+    <div class="head">
+      <div class="brand"><img class="logo" src="/logo.svg" alt=""><h2>Girdish</h2></div>
+      <span class="spacer"></span>
+      <span class="updated num" id="updated">Connecting…</span>
+      <label class="switch" title="Screenshot mode: hide machine names, host names and error text"><input type="checkbox" id="public"><span></span></label>
+    </div>
+    <div class="kpis" id="kpis"></div>
+    <div class="room"><div class="title">Room for work now</div><div class="chips" id="room"></div><div class="error" id="error" hidden></div></div>
+  </div></article>
+</main>
+
+<script>
+const $ = id => document.getElementById(id);
+const esc = s => String(s ?? '').replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+const fmt = (n, d = 0) => n == null || isNaN(n) ? '–' : Number(n).toLocaleString('en-US', { minimumFractionDigits: d, maximumFractionDigits: d });
+const clock = t => t ? new Date(t).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', second: '2-digit' }) : '';
+const tone = v => v >= 90 ? 'var(--red)' : v >= 70 ? 'var(--amber)' : 'var(--green)';
+const uptime = h => h == null ? '–' : h >= 48 ? `${fmt(h / 24)} <small>days</small>` : `${fmt(h)} <small>h</small>`;
+const osName = os => ({ Darwin: 'macOS' })[os] || os || '';
+
+let isPublic = false;
+try { isPublic = localStorage.getItem('girdish.public') === '1'; } catch {}
+$('public').checked = isPublic;
+$('public').onchange = e => { isPublic = e.target.checked; try { localStorage.setItem('girdish.public', isPublic ? '1' : '0'); } catch {} if (last) render(last); };
+
+function gauge(label, value, sub) {
+  const v = Math.max(0, Math.min(100, value || 0));
+  return `<div class="gauge"><div class="ring" style="--v:${v};--c:${tone(v)}"><b class="num">${fmt(v)}%</b></div><div class="cap">${label}<span class="num">${sub}</span></div></div>`;
+}
+const fact = (k, v, cls = '') => `<div class="fact ${cls}"><div class="k">${k}</div><div class="v num">${v}</div></div>`;
+const notes = items => items.length ? `<div class="notes">${items.map(([t, c]) => `<span class="${c || ''}">${esc(t)}</span>`).join('')}</div>` : '';
+const head = (name, hw, pill, time) => `<div class="head"><h2>${esc(name)}</h2><span class="hw">${esc(hw)}</span><span class="spacer"></span>${pill}<span class="time num">${time}</span></div>`;
+const card = (key, cls, html) => `<article class="card ${cls}" data-key="${key}"><div class="inner">${html}</div></article>`;
+const label = (m, i) => isPublic ? `Machine ${i + 1}` : m.name;
+
+function agentChips(m) {
+  const a = m.agent_sessions || {};
+  const chips = [['Claude Code', a.claude], ['Codex', a.codex]].filter(([, n]) => n)
+    .map(([n, c]) => `<span class="chip"><span class="dot green"></span><span class="name">${n}</span>${c > 1 ? `<span class="meta">×${c}</span>` : ''}</span>`);
+  return chips.length ? `<div class="chips">${chips.join('')}</div>` : '<div class="empty">No agents</div>';
+}
+
+function machineCard(m, i, limits, at) {
+  const name = label(m, i);
+  if (!m.online) {
+    return card(`m${i}`, 'offline', head(name, '', '<span class="pill grey">Offline</span>', clock(at)) +
+      `<div class="section" style="border:0"><div class="empty">${isPublic ? 'Not reachable' : esc(m.error || 'Not reachable')}</div></div>`);
+  }
+  const hw = [isPublic || m.hostname === m.name ? '' : m.hostname, osName(m.os)].filter(Boolean).join(' · ');
+  const cpuPct = 100 * (m.load_per_core || 0);
+  const memUsed = (m.mem_total_gb || 0) - (m.mem_available_gb || 0), ramPct = m.mem_total_gb ? 100 * memUsed / m.mem_total_gb : 0;
+  const busy = m.load_per_core != null && m.load_per_core >= limits.max_load_per_core;
+  const lowMem = (m.mem_available_gb || 0) < limits.min_free_mem_gb;
+  const lowDisk = m.disk_free_gb != null && m.disk_free_gb < limits.min_free_disk_gb;
+  const why = busy ? 'Busy' : lowMem ? 'Low memory' : lowDisk ? 'Low disk' : 'Busy';
+  const pill = m.has_room ? '<span class="pill green">Room</span>' : `<span class="pill amber">${why}</span>`;
+  const agents = (m.agent_sessions?.claude || 0) + (m.agent_sessions?.codex || 0);
+  const facts = [
+    fact('Load', m.load ? `${fmt(m.load[0], 1)} <small>/ ${m.cores} cores</small>` : '–', busy ? 'bad' : ''),
+    fact('Free cores', `${fmt(m.free_cores)} <small>of ${m.cores}</small>`),
+    fact('Memory free', `${fmt(m.mem_available_gb, 1)} <small>GB</small>`, lowMem ? 'bad' : ''),
+    fact('Disk free', `${fmt(m.disk_free_gb, m.disk_free_gb < 10 ? 1 : 0)} <small>of ${fmt(m.disk_total_gb)} GB</small>`, lowDisk ? 'bad' : ''),
+    fact('Up', uptime(m.uptime_hours)),
+    fact('Temperature', m.temp_c != null ? `${m.temp_c} <small>°C</small>` : '–', m.temp_c >= 85 ? 'warn' : '')
+  ].join('');
+  const n = [];
+  if (busy) n.push(['CPU is busy', 'warn']);
+  if (lowMem) n.push([`Less than ${limits.min_free_mem_gb} GB memory free`, 'warn']);
+  if (lowDisk) n.push([`Less than ${limits.min_free_disk_gb} GB disk free`, 'warn']);
+  const cpuSub = m.temp_c != null ? `${m.temp_c} °C` : `${m.cores} cores`;
+  return card(`m${i}`, '', `
+    ${head(name, hw, pill, clock(at))}
+    <div class="top"><div class="gauges">${gauge('CPU', cpuPct, cpuSub)}${gauge('RAM', ramPct, `${fmt(memUsed, 1)}/${fmt(m.mem_total_gb)} GB`)}</div><div class="facts">${facts}</div></div>
+    <div class="section"><h3>Agents<span>${agents}</span></h3>${agentChips(m)}${notes(n)}</div>`);
+}
+
+function summary(status) {
+  const ms = status.machines, up = ms.filter(m => m.online);
+  let cores = 0, busy = 0, ram = 0, ramUsed = 0, claude = 0, codex = 0;
+  up.forEach(m => {
+    cores += m.cores || 0; busy += Math.min(m.cores || 0, (m.load || [0])[0]);
+    ram += m.mem_total_gb || 0; ramUsed += (m.mem_total_gb || 0) - (m.mem_available_gb || 0);
+    claude += m.agent_sessions?.claude || 0; codex += m.agent_sessions?.codex || 0;
+  });
+  const unused = ram - ramUsed, unusedPct = ram ? 100 * unused / ram : 0, cpuPct = cores ? 100 * busy / cores : 0;
+  const mix = [claude && `Claude Code ×${claude}`, codex && `Codex ×${codex}`].filter(Boolean).join(', ') || 'none';
+  $('kpis').innerHTML = `
+    <div class="kpi"><div class="label">Unused RAM</div><div class="value num">${fmt(unused)}<small>of ${fmt(ram)} GB</small></div><div class="bar"><i style="width:${100 - unusedPct}%;background:${tone(100 - unusedPct)}"></i></div><div class="sub num">${fmt(unusedPct)} % free</div></div>
+    <div class="kpi"><div class="label">CPU in use</div><div class="value num">${fmt(cpuPct)} %<small>of ${cores} threads</small></div><div class="bar"><i style="width:${cpuPct}%;background:${tone(cpuPct)}"></i></div><div class="sub num">${fmt(busy, 1)} threads busy</div></div>
+    <div class="kpi"><div class="label">Agents working</div><div class="value num">${claude + codex}</div><div class="sub">${mix}</div></div>
+    <div class="kpi"><div class="label">Machines up</div><div class="value num">${up.length}<small>of ${ms.length}</small></div><div class="sub">${ms.filter(m => m.has_room).length} with room</div></div>`;
+  const room = ms.map((m, i) => [m, i]).filter(([m]) => m.has_room);
+  $('room').innerHTML = !ms.length ? '<div class="empty">No machines yet. Add one with <code>girdish add NAME ADDRESS</code>.</div>'
+    : room.length ? room.map(([m, i]) => `<span class="chip"><span class="dot green"></span><span class="name">${esc(label(m, i))}</span><span class="meta">${fmt(m.free_cores)} cores · ${fmt(m.mem_available_gb, 1)} GB</span></span>`).join('')
+    : '<div class="empty">No machine has room right now</div>';
+}
+
+// Only cards whose content changed are replaced, so an unchanged card keeps its scroll position.
+const shown = {};
+function setCard(key, html) {
+  if (shown[key] === html) return;
+  const old = document.querySelector(`.card[data-key="${key}"]`);
+  const tmp = document.createElement('div'); tmp.innerHTML = html;
+  const el = tmp.firstElementChild;
+  if (old) old.replaceWith(el); else $('grid').appendChild(el);
+  shown[key] = html;
+}
+
+let last = null;
+function render(status) {
+  const ms = status.machines;
+  const cols = parseInt(getComputedStyle($('grid')).getPropertyValue('--cols')) || 3;
+  // At least two rows, so a small fleet keeps the same card proportions as a full one.
+  // One column scrolls with cards half a window high, as in Fleet.
+  $('grid').style.setProperty('--rows', cols === 1 ? 2 : Math.max(2, Math.ceil((ms.length + 1) / cols)));
+  summary(status);
+  ms.forEach((m, i) => setCard(`m${i}`, machineCard(m, i, status.limits, status.polled_at)));
+  document.querySelectorAll('.card[data-key^="m"]').forEach(el => { if (+el.dataset.key.slice(1) >= ms.length) { el.remove(); delete shown[el.dataset.key]; } });
+  $('updated').textContent = clock(status.polled_at);
+  $('updated').classList.remove('stale');
+}
+
+async function poll() {
+  try {
+    const r = await fetch('/status.json', { cache: 'no-store' });
+    if (!r.ok) throw new Error(`HTTP ${r.status}`);
+    last = await r.json(); render(last); $('error').hidden = true;
+  } catch (e) {
+    $('updated').textContent = 'Not reachable'; $('updated').classList.add('stale');
+    $('error').hidden = false; $('error').textContent = 'Girdish is not answering. Is the dashboard still running?';
+  }
+  setTimeout(poll, 10000);
+}
+addEventListener('resize', () => last && render(last));
+poll();
+</script>
+</body>
+</html>

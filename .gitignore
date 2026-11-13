@@ -1,0 +1,12 @@
+__pycache__/
+*.pyc
+.venv/
+dist/
+build/
+*.egg-info/
+# local config and runtime state
+girdish.json
+.env
+.girdish-cache.json
+.girdish-poll.lock
+.*.tmp

@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
+  <!-- Girdish: Kullevi's mark with a belt around it, open at the top like a standby symbol. -->
+  <style>g { color: #0f9d6b } @media (prefers-color-scheme: dark) { g { color: #2fd08b } }</style>
+  <g fill="currentColor">
+    <path d="M42,23.09 A30,30 0 1 0 58,23.09 L58,40 A8,8 0 0 1 42,40 Z" transform="translate(50 50) scale(.62) translate(-50 -52)"/>
+    <path d="M71,17.5 A39,39 0 1 1 29,17.5" fill="none" stroke="currentColor" stroke-width="10" stroke-linecap="round"/>
+  </g>
+</svg>
