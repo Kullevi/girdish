@@ -12,10 +12,14 @@ itself installs nothing on the spare machines.
 **To get started, give the link to this page to Claude or Codex and ask it to
 set up Girdish for you.** It will tell you when it needs you to do something.
 
-> **Status:** early development. Tested on Linux, macOS and Windows; see
-> [docs/GOALS.md](docs/GOALS.md) and [docs/DESIGN.md](docs/DESIGN.md).
-> Built by the team behind [Kullevi](https://kullevi.com), which builds AI
-> that runs your company for you.
+[![Tests](https://github.com/Kullevi/girdish/actions/workflows/test.yml/badge.svg)](https://github.com/Kullevi/girdish/actions/workflows/test.yml)
+[![License: MIT](https://img.shields.io/badge/license-MIT-0f9d6b.svg)](LICENSE)
+
+Every change is tested automatically on Linux, macOS and Windows, including a
+real run over SSH. What Girdish sets out to do is in
+[docs/GOALS.md](docs/GOALS.md), and the choices behind it in
+[docs/DESIGN.md](docs/DESIGN.md). Built by the team behind
+[Kullevi](https://kullevi.com), which builds AI that runs your company for you.
 
 ## Companies that run themselves
 
