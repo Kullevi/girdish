@@ -40,6 +40,14 @@ to know, at any moment, which machine had room, and to put their work there
 without overloading anything. Girdish is that tool, taken out of our own setup
 and made general, so anyone with a spare laptop or two can do the same.
 
+## Who does what
+
+| Who | What |
+|---|---|
+| **Girdish** | Checks each spare machine over SSH and tells agents which one has room (`status`, `pick`), and shows a dashboard. Nothing else. |
+| **Your agent** (Claude or Codex) | Installs Girdish, adds your machines, installs what your work needs on them over SSH, and from then on runs work on the machine with room. |
+| **You** | The few things that need a person: turning on SSH on each spare machine, keeping it awake, and typing passwords. Your agent tells you exactly what to do, one step at a time. |
+
 ## About Kullevi, the team behind Girdish
 
 Girdish comes out of our daily work at [Kullevi](https://kullevi.com), where
@@ -61,14 +69,6 @@ and that by 2035 most new companies will be run by AI.
 
 That is the world we are building for at Kullevi, and Girdish is a small piece
 of how we work towards it. **[Join the waitlist at kullevi.com](https://kullevi.com).**
-
-## Who does what
-
-| Who | What |
-|---|---|
-| **Girdish** | Checks each spare machine over SSH and tells agents which one has room (`status`, `pick`), and shows a dashboard. Nothing else. |
-| **Your agent** (Claude or Codex) | Installs Girdish, adds your machines, installs what your work needs on them over SSH, and from then on runs work on the machine with room. |
-| **You** | The few things that need a person: turning on SSH on each spare machine, keeping it awake, and typing passwords. Your agent tells you exactly what to do, one step at a time. |
 
 ---
 
