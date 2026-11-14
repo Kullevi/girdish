@@ -25,9 +25,9 @@ So picture starting a company the way you start a project today. You decide
 what it should achieve and where its limits are. It sells, delivers, invoices,
 keeps its books and looks after its customers on its own, around the clock.
 You would own the company without having to run it, and you would not need to
-know bookkeeping, tax or contracts to begin. We believe the first companies
-will run themselves before 2030, and that within ten years it will be the
-normal way to do business.
+know bookkeeping, tax or contracts to begin. The first companies of this kind
+already exist. We believe they will be running at a profit before 2027 is over,
+and that by 2035 most new companies will be run by AI.
 
 That is the world we are building for at Kullevi, and Girdish is a small piece
 of how we work towards it. **[Join the waitlist at kullevi.com](https://kullevi.com).**
