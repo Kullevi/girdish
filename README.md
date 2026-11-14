@@ -21,25 +21,6 @@ real run over SSH. What Girdish sets out to do is in
 [docs/DESIGN.md](docs/DESIGN.md). Built by the team behind
 [Kullevi](https://kullevi.com), which builds AI that runs your company for you.
 
-## Companies that run themselves
-
-If you build with AI, you have watched it happen: you describe what you want,
-and working software appears. We are convinced that companies are next. The
-models can already do most of the thinking a business needs. What they lacked
-was everything around them: memory, tools, the authority to act and the stamina
-to keep going. That gap is closing fast.
-
-So picture starting a company the way you start a project today. You decide
-what it should achieve and where its limits are. It sells, delivers, invoices,
-keeps its books and looks after its customers on its own, around the clock.
-You would own the company without having to run it, and you would not need to
-know bookkeeping, tax or contracts to begin. The first companies of this kind
-already exist. We believe they will be running at a profit before 2027 is over,
-and that by 2035 most new companies will be run by AI.
-
-That is the world we are building for at Kullevi, and Girdish is a small piece
-of how we work towards it. **[Join the waitlist at kullevi.com](https://kullevi.com).**
-
 ## Why we built it
 
 At [Kullevi](https://kullevi.com) we build our product with many Claude Code
@@ -58,6 +39,28 @@ Extra machines only help if the work actually lands on them. Our agents needed
 to know, at any moment, which machine had room, and to put their work there
 without overloading anything. Girdish is that tool, taken out of our own setup
 and made general, so anyone with a spare laptop or two can do the same.
+
+## About Kullevi, the team behind Girdish
+
+Girdish comes out of our daily work at [Kullevi](https://kullevi.com), where
+we build AI that runs companies. This is what we are working towards.
+
+If you build with AI, you have watched it happen: you describe what you want,
+and working software appears. We are convinced that companies are next. The
+models can already do most of the thinking a business needs. What they lacked
+was everything around them: memory, tools, the authority to act and the stamina
+to keep going. That gap is closing fast.
+
+So picture starting a company the way you start a project today. You decide
+what it should achieve and where its limits are. It sells, delivers, invoices,
+keeps its books and looks after its customers on its own, around the clock.
+You would own the company without having to run it, and you would not need to
+know bookkeeping, tax or contracts to begin. The first companies of this kind
+already exist. We believe they will be running at a profit before 2027 is over,
+and that by 2035 most new companies will be run by AI.
+
+That is the world we are building for at Kullevi, and Girdish is a small piece
+of how we work towards it. **[Join the waitlist at kullevi.com](https://kullevi.com).**
 
 ## Who does what
 
