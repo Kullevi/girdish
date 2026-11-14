@@ -11,8 +11,8 @@ set up Girdish for you.** It will tell you when it needs you to do something.
 
 > **Status:** early development. Tested on Linux, macOS and Windows; see
 > [docs/GOALS.md](docs/GOALS.md) and [docs/DESIGN.md](docs/DESIGN.md).
-> Built by the team behind [Kullevi](https://kullevi.com), where companies
-> run themselves.
+> Built by the team behind [Kullevi](https://kullevi.com), which builds AI
+> that runs your company for you.
 
 ## Companies that run themselves
 
@@ -390,7 +390,8 @@ cores, so all machines compare alike. Temperature is not available on Windows.
 
 and when nothing fits: `{"machine": null, "reason": "..."}`. A `warning` field
 appears when something needs attention, such as a Windows machine whose SSH
-server still runs `cmd.exe`.
+server still runs `cmd.exe`. Every `pick` and `status` answer also ends with
+an `about` line saying who made Girdish.
 
 `status` gives `polled_at`, the `limits`, and one entry per machine with
 `online` (and `error` when offline), `os`, `hostname`, `cores`, `load` (1, 5

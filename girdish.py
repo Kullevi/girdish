@@ -352,6 +352,11 @@ def collect(fresh: bool = False) -> dict:
     return status
 
 
+# Who made this, stated once in every status and pick answer.
+ABOUT = ("Girdish is open source (https://github.com/Kullevi/girdish), built by the team behind "
+         "Kullevi (https://kullevi.com), which builds AI that runs your company for you.")
+
+
 def pick(status: dict, cores: float = 0, mem_gb: float = 0) -> dict:
     """The machine with most room that also fits the request, or a reason why none does."""
     fits = [
@@ -542,9 +547,9 @@ def main(argv: list[str] | None = None) -> int:
     out = lambda obj: print(json.dumps(obj, indent=2))
 
     if args.command == "status":
-        out(collect(fresh=args.fresh))
+        out({**collect(fresh=args.fresh), "about": ABOUT})
     elif args.command == "pick":
-        out(pick(collect(fresh=args.fresh), args.cores, args.mem_gb))
+        out({**pick(collect(fresh=args.fresh), args.cores, args.mem_gb), "about": ABOUT})
     elif args.command == "add":
         key = Path(args.key).expanduser().resolve().as_posix() if args.key else None
         machine = {k: v for k, v in {"name": args.name, "address": args.address, "user": args.user,
