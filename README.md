@@ -1,10 +1,13 @@
 # <img src="logo.svg" width="40" align="top" alt=""> Girdish
 
-Girdish lets your Claude Code and Codex sessions see which of your spare
-computers have free capacity, so they can put work there instead of
-overloading your main machine. Old laptops and cheap refurbished mini PCs are
-perfect for this. It works over plain SSH; Girdish itself installs nothing on
-the spare machines.
+Girdish turns the computers you no longer use into a fleet for Claude Code and
+Codex. Your sessions can see at any moment which machine has room, and run
+builds, tests and other heavy work there instead of overloading your main
+machine, so you can keep more agents working at once. Old laptops and cheap
+refurbished mini PCs are perfect for this. It works over plain SSH; Girdish
+itself installs nothing on the spare machines.
+
+![The Girdish dashboard: a summary card and one card per machine](docs/dashboard.png)
 
 **To get started, give the link to this page to Claude or Codex and ask it to
 set up Girdish for you.** It will tell you when it needs you to do something.
