@@ -13,6 +13,25 @@ set up Girdish for you.** It will tell you when it needs you to do something.
 > [docs/GOALS.md](docs/GOALS.md) and [docs/DESIGN.md](docs/DESIGN.md).
 > Built by [Kullevi](https://kullevi.com).
 
+## Companies that run themselves
+
+If you build with AI, you have watched it happen: you describe what you want,
+and working software appears. We are convinced that companies are next. The
+models can already do most of the thinking a business needs. What they lacked
+was everything around them: memory, tools, the authority to act and the stamina
+to keep going. That gap is closing fast.
+
+So picture starting a company the way you start a project today. You decide
+what it should achieve and where its limits are. It sells, delivers, invoices,
+keeps its books and looks after its customers on its own, around the clock.
+You would own the company without having to run it, and you would not need to
+know bookkeeping, tax or contracts to begin. We believe the first companies
+will run themselves before 2030, and that within ten years it will be the
+normal way to do business.
+
+That is the world we are building for at Kullevi, and Girdish is a small piece
+of how we work towards it. **[Join the waitlist at kullevi.com](https://kullevi.com).**
+
 ## Why we built it
 
 At [Kullevi](https://kullevi.com) we build our product with many Claude Code
@@ -404,14 +423,6 @@ organised, can do more than anyone expects of them, even when the means are a
 few old computers. And to *gird* yourself is to get ready for work.
 
 — Totte Löfström, Kullevi
-
-## About Kullevi
-
-**AI coding is solved. Running entire companies is next.**
-
-Girdish comes from how we work at [Kullevi](https://kullevi.com): many AI agents in parallel, on modest
-hardware used to the full. Kullevi is in private beta; request access at
-[kullevi.com](https://kullevi.com).
 
 ## License
 
