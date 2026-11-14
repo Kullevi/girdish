@@ -11,7 +11,8 @@ set up Girdish for you.** It will tell you when it needs you to do something.
 
 > **Status:** early development. Tested on Linux, macOS and Windows; see
 > [docs/GOALS.md](docs/GOALS.md) and [docs/DESIGN.md](docs/DESIGN.md).
-> Built by [Kullevi](https://kullevi.com).
+> Built by the team behind [Kullevi](https://kullevi.com), where companies
+> run themselves.
 
 ## Companies that run themselves
 
