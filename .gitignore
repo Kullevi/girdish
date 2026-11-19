@@ -6,6 +6,7 @@ build/
 *.egg-info/
 # local config and runtime state
 girdish.json
+dashboard.log
 .env
 .girdish-cache.json
 .girdish-poll.lock

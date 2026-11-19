@@ -113,8 +113,17 @@ Windows, macOS or Linux, and needs:
     after the terminal or app is restarted.
   - Missing on macOS: `xcode-select --install` opens a window where the user
     clicks **Install** (**User**).
+  - Missing on Linux: the user runs `sudo apt install -y python3` (Ubuntu,
+    Debian, Mint; other systems use their own package manager) in their own
+    terminal, since it asks for their password (**User**).
 - **The `ssh` command.** Built into Windows 10/11, macOS and Linux.
-- **Git**, to clone this repository.
+- **Git**, to clone this repository. Try `git --version`.
+  - Missing on Windows: with the user's OK, run
+    `winget install -e --id Git.Git --accept-source-agreements --accept-package-agreements`,
+    then restart the terminal or app.
+  - Missing on macOS: the same `xcode-select --install` as for Python (**User**).
+  - Missing on Linux: the user runs `sudo apt install -y git` in their own
+    terminal (**User**). Ubuntu does not include Git from the start.
 
 Clone Girdish into the user's home folder:
 
@@ -133,6 +142,12 @@ editing it.
 
 If the main machine has no SSH key (`~/.ssh/id_ed25519`), create one without
 a passphrase: `ssh-keygen -t ed25519 -N "" -f ~/.ssh/id_ed25519`.
+
+Check that Girdish runs: `girdish status` should answer with `"machines": []`,
+since none are added yet.
+
+If the user has no spare machine ready yet, skip to step 7 now, and do steps
+2 to 6 once they have one.
 
 ### 2. Each spare machine (User, guided by the agent)
 
@@ -351,12 +366,14 @@ someone may be using it."
 Start the dashboard **in the background**, since it keeps running until
 stopped:
 
-- Bash or zsh: `nohup <python> <path>/girdish.py dashboard > dashboard.log 2>&1 &`
+- Bash or zsh: `nohup <python> <path>/girdish.py dashboard > <path>/dashboard.log 2>&1 < /dev/null &`
 - PowerShell: `Start-Process <python> -ArgumentList '<path>/girdish.py','dashboard' -WindowStyle Hidden`
 
 It opens `http://127.0.0.1:8765/` in a window of its own (with Edge or Chrome
 installed; otherwise in a normal browser tab). Check that the page answers, for
-example with `curl -s http://127.0.0.1:8765/`. Tell the user that:
+example with `curl -s http://127.0.0.1:8765/`, and ask the user whether the
+window appeared: Girdish cannot tell whether a window opened, and none can
+open on a machine nobody is logged in to on screen. Tell the user that:
 
 - the window shows all their machines and refreshes by itself;
 - they can resize it freely, and the cards rearrange and scale to fit;
@@ -366,7 +383,9 @@ example with `curl -s http://127.0.0.1:8765/`. Tell the user that:
 - they can ask you to "open the Girdish dashboard" again later (running the
   command again just reopens the window if it is already running).
 
-To stop it, end the process that listens on port 8765.
+To stop it, end the process that listens on port 8765: on Linux
+`fuser -k 8765/tcp`, on macOS `kill $(lsof -ti tcp:8765)`, on Windows
+`Stop-Process -Id (Get-NetTCPConnection -LocalPort 8765 -State Listen).OwningProcess`.
 
 #### A shortcut and opening at login (ask the user)
 
@@ -429,11 +448,22 @@ Categories=Utility;
 EOF
 ```
 
-To open it at login: `mkdir -p ~/.config/autostart && cp ~/.local/share/applications/girdish.desktop ~/.config/autostart/`.
-On the desktop: copy the same file to the folder `xdg-user-dir DESKTOP`
-prints, `chmod +x` it, and on GNOME also run `gio set FILE metadata::trusted true`.
+This puts Girdish in the application menu. To open it at login:
+
+```
+mkdir -p ~/.config/autostart && cp ~/.local/share/applications/girdish.desktop ~/.config/autostart/
+```
+
+On the desktop (the last line is for GNOME, the Ubuntu desktop):
+
+```
+desk="$(xdg-user-dir DESKTOP)"
+cp ~/.local/share/applications/girdish.desktop "$desk/" && chmod +x "$desk/girdish.desktop"
+gio set "$desk/girdish.desktop" metadata::trusted true
+```
+
 To keep it in the dock or panel, tell the user to open Girdish from the
-application menu and choose **Add to Favorites** or **Pin** on its icon.
+application menu, right-click its icon and choose **Add to Favorites** or **Pin**.
 
 ### 8. Give a fix back (Agent, with the user)
 
