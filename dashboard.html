@@ -2,9 +2,10 @@
 <!-- Girdish dashboard: one summary card, then one card per spare machine. Served by
      `girdish.py dashboard` on localhost; reads /status.json. Cards fill the window
      (3 columns wide, 2 medium, 1 narrow) and each card scales its text to its size. -->
-<html lang="en">
+<html lang="en" translate="no">
 <head>
 <meta charset="utf-8">
+<meta name="google" content="notranslate">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Girdish</title>
 <link rel="icon" type="image/svg+xml" href="/logo.svg">
@@ -227,7 +228,7 @@ function summary(status) {
   const unused = ram - ramUsed, unusedPct = ram ? 100 * unused / ram : 0, cpuPct = cores ? 100 * busy / cores : 0;
   const mix = [claude && `Claude Code ×${claude}`, codex && `Codex ×${codex}`].filter(Boolean).join(', ') || 'none';
   $('kpis').innerHTML = `
-    <div class="kpi"><div class="label">Unused RAM</div><div class="value num">${fmt(unused)}<small>of ${fmt(ram)} GB</small></div><div class="bar"><i style="width:${100 - unusedPct}%;background:${tone(100 - unusedPct)}"></i></div><div class="sub num">${fmt(unusedPct)} % free</div></div>
+    <div class="kpi"><div class="label">Unused RAM</div><div class="value num">${fmt(unused)}<small>of ${fmt(ram)} GB</small></div><div class="bar"><i style="width:${ram ? 100 - unusedPct : 0}%;background:${tone(100 - unusedPct)}"></i></div><div class="sub num">${fmt(unusedPct)} % free</div></div>
     <div class="kpi"><div class="label">CPU in use</div><div class="value num">${fmt(cpuPct)} %<small>of ${cores} threads</small></div><div class="bar"><i style="width:${cpuPct}%;background:${tone(cpuPct)}"></i></div><div class="sub num">${fmt(busy, 1)} threads busy</div></div>
     <div class="kpi"><div class="label">Agents working</div><div class="value num">${claude + codex}</div><div class="sub">${mix}</div></div>
     <div class="kpi"><div class="label">Machines up</div><div class="value num">${up.length}<small>of ${ms.length}</small></div><div class="sub">${ms.filter(m => m.has_room).length} with room</div></div>`;
