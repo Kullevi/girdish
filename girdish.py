@@ -37,6 +37,17 @@ PROBE_TIMEOUT = 30
 # A poll can try two probes on a machine of unknown system.
 POLL_LOCK_STALE = 2 * PROBE_TIMEOUT + 10
 
+
+def run_quiet(command: list[str], **kwargs) -> subprocess.CompletedProcess:
+    """subprocess.run that never opens a console window on Windows.
+
+    Started from pythonw.exe (the shortcut), a console child such as ssh.exe
+    would otherwise get a new visible terminal window on every refresh.
+    """
+    if sys.platform == "win32":
+        kwargs.setdefault("creationflags", subprocess.CREATE_NO_WINDOW)
+    return subprocess.run(command, **kwargs)
+
 DEFAULT_LIMITS = {
     # A machine has room while its 1-minute load per core is below this...
     "max_load_per_core": 0.75,
@@ -259,8 +270,8 @@ def probe_command(family: str) -> tuple[list[str], bytes]:
 
 def run_probe(machine: dict, family: str):
     remote, stdin = probe_command(family)
-    return subprocess.run(ssh_command(machine) + remote, input=stdin, capture_output=True,
-                          timeout=PROBE_TIMEOUT)
+    return run_quiet(ssh_command(machine) + remote, input=stdin, capture_output=True,
+                     timeout=PROBE_TIMEOUT)
 
 
 def probe(machine: dict) -> dict:
@@ -460,11 +471,11 @@ def screenshot(url: str, width: int, height: int) -> bytes | None:
     folder = tempfile.mkdtemp(prefix="girdish-shot-")
     out = os.path.join(folder, "shot.png")
     try:
-        subprocess.run([browser, "--headless=new", "--disable-gpu", "--hide-scrollbars",
-                        f"--user-data-dir={os.path.join(folder, 'profile')}",
-                        f"--window-size={width},{height}", "--force-device-scale-factor=2",
-                        "--virtual-time-budget=8000", f"--screenshot={out}", url],
-                       stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, timeout=90)
+        run_quiet([browser, "--headless=new", "--disable-gpu", "--hide-scrollbars",
+                   f"--user-data-dir={os.path.join(folder, 'profile')}",
+                   f"--window-size={width},{height}", "--force-device-scale-factor=2",
+                   "--virtual-time-budget=8000", f"--screenshot={out}", url],
+                  stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, timeout=90)
         return Path(out).read_bytes() if os.path.exists(out) else None
     except (OSError, subprocess.TimeoutExpired):
         return None
