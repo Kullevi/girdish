@@ -88,6 +88,14 @@ body { font-family: "Segoe UI Variable Text", "Segoe UI", system-ui, -apple-syst
 .switch span::after { content: ""; position: absolute; top: .15em; left: .15em; width: 1em; height: 1em; border-radius: 50%; background: #fff; box-shadow: 0 1px 2px rgba(0,0,0,.25); transition: transform .15s; }
 .switch input:checked + span { background: var(--blue); }
 .switch input:checked + span::after { transform: translateX(1em); }
+.tools { display: flex; align-items: center; gap: .9em; margin-top: .7em; flex: none; font-size: .8em; color: var(--text-2); }
+.hide { display: inline-flex; align-items: center; gap: .45em; cursor: pointer; user-select: none; }
+.shot { display: inline-flex; align-items: center; gap: .35em; font: inherit; color: inherit; background: var(--card);
+  border: 1px solid var(--line-strong); border-radius: 999px; padding: .2em .75em; cursor: pointer; }
+.shot:hover { background: var(--page); } .shot:disabled { cursor: progress; opacity: .7; }
+.shot svg { width: 1.15em; height: 1.15em; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linejoin: round; }
+/* The picture itself shows the fleet, not the buttons. */
+.shot-mode .tools { display: none; }
 .kpis { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: .9em 1.2em; margin-top: 1em; flex: 1; align-content: start; }
 .kpi .label { color: var(--text-3); font-size: .72em; text-transform: uppercase; letter-spacing: .05em; font-weight: 650; }
 .kpi .value { font: 650 1.9em/1.1 "Segoe UI Variable Display", "Segoe UI", system-ui, -apple-system, sans-serif; letter-spacing: -.02em; margin-top: .1em; }
@@ -110,7 +118,10 @@ body { font-family: "Segoe UI Variable Text", "Segoe UI", system-ui, -apple-syst
       <div class="brand"><img class="logo" src="/logo.svg" alt=""><h2>Girdish</h2></div>
       <span class="spacer"></span>
       <span class="updated num" id="updated">Connecting…</span>
-      <label class="switch" title="Screenshot mode: hide machine names, host names and error text"><input type="checkbox" id="public"><span></span></label>
+    </div>
+    <div class="tools">
+      <label class="hide" title="Hides machine names, host names and error text, for sharing"><span class="switch"><input type="checkbox" id="public"><span></span></span>Hide names</label>
+      <button class="shot" id="shot" type="button" title="Saves a picture of this window to Downloads and copies it, ready to share"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 8h3l2-2.5h6L17 8h3v11H4z"/><circle cx="12" cy="13.2" r="3.4"/></svg><span id="shot-text">Screenshot</span></button>
     </div>
     <div class="kpis" id="kpis"></div>
     <div class="room"><div class="title">Room for work now</div><div class="chips" id="room"></div><div class="error" id="error" hidden></div></div>
@@ -128,10 +139,30 @@ const tone = v => v >= 90 ? 'var(--red)' : v >= 70 ? 'var(--amber)' : 'var(--gre
 const uptime = h => h == null ? '–' : h >= 48 ? `${fmt(h / 24)} <small>days</small>` : `${fmt(h)} <small>h</small>`;
 const osName = os => ({ Darwin: 'macOS' })[os] || os || '';
 
+// ?shot=1 is the copy the server draws for the Screenshot button; ?public=1 hides names there.
+const query = new URLSearchParams(location.search);
+if (query.get('shot') === '1') document.body.classList.add('shot-mode');
 let isPublic = false;
 try { isPublic = localStorage.getItem('girdish.public') === '1'; } catch {}
+if (query.has('public')) isPublic = query.get('public') === '1';
 $('public').checked = isPublic;
 $('public').onchange = e => { isPublic = e.target.checked; try { localStorage.setItem('girdish.public', isPublic ? '1' : '0'); } catch {} if (last) render(last); };
+
+$('shot').onclick = () => {
+  const btn = $('shot'), text = $('shot-text'), done = msg => { text.textContent = msg; setTimeout(() => { text.textContent = 'Screenshot'; btn.disabled = false; }, 3500); };
+  btn.disabled = true; text.textContent = 'Taking picture…';
+  const png = fetch(`/screenshot.png?w=${innerWidth}&h=${innerHeight}&public=${isPublic ? 1 : 0}`, { headers: { 'X-Girdish': '1' }, cache: 'no-store' })
+    .then(r => r.ok ? r.blob() : Promise.reject(new Error(r.status === 501 ? 'Needs Edge or Chrome' : `HTTP ${r.status}`)));
+  // Handed to the clipboard straight away, so the click still counts as the user's own.
+  let copied = Promise.reject();
+  try { copied = navigator.clipboard.write([new ClipboardItem({ 'image/png': png })]); } catch {}
+  png.then(blob => {
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob); a.download = `girdish-${new Date().toISOString().slice(0, 10)}.png`; a.click();
+    setTimeout(() => URL.revokeObjectURL(a.href), 10000);
+    return copied.then(() => done('Saved and copied'), () => done('Saved to Downloads'));
+  }).catch(e => { copied.catch(() => {}); done(e.message || 'Failed'); });
+};
 
 function gauge(label, value, sub) {
   const v = Math.max(0, Math.min(100, value || 0));

@@ -360,7 +360,9 @@ example with `curl -s http://127.0.0.1:8765/`. Tell the user that:
 
 - the window shows all their machines and refreshes by itself;
 - they can resize it freely, and the cards rearrange and scale to fit;
-- the switch at the top right hides names, for screenshots;
+- **Hide names** hides machine names, host names and error text, and
+  **Screenshot** saves a picture of the window to Downloads and copies it,
+  ready to share (the picture needs Edge or Chrome);
 - they can ask you to "open the Girdish dashboard" again later (running the
   command again just reopens the window if it is already running).
 

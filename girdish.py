@@ -18,7 +18,10 @@ import shlex
 import shutil
 import subprocess
 import sys
+import tempfile
+import threading
 import time
+import urllib.parse
 import webbrowser
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
@@ -446,6 +449,27 @@ def open_window(url: str) -> None:
     webbrowser.open(url)
 
 
+def screenshot(url: str, width: int, height: int) -> bytes | None:
+    """A sharp PNG of the dashboard at the window's size, drawn by Edge or Chrome
+    without a window. A throwaway profile keeps it apart from the open window."""
+    browser = app_browser()
+    if not browser:
+        return None
+    folder = tempfile.mkdtemp(prefix="girdish-shot-")
+    out = os.path.join(folder, "shot.png")
+    try:
+        subprocess.run([browser, "--headless=new", "--disable-gpu", "--hide-scrollbars",
+                        f"--user-data-dir={os.path.join(folder, 'profile')}",
+                        f"--window-size={width},{height}", "--force-device-scale-factor=2",
+                        "--virtual-time-budget=8000", f"--screenshot={out}", url],
+                       stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, timeout=90)
+        return Path(out).read_bytes() if os.path.exists(out) else None
+    except (OSError, subprocess.TimeoutExpired):
+        return None
+    finally:
+        shutil.rmtree(folder, ignore_errors=True)
+
+
 def dashboard_answers(url: str) -> bool:
     import urllib.request
     try:
@@ -460,6 +484,7 @@ def serve_dashboard(port: int, open_browser: bool) -> None:
     logo = (HERE / "logo.svg").read_bytes()
     url = f"http://127.0.0.1:{port}/"
     allowed_hosts = {f"127.0.0.1:{port}", f"localhost:{port}"}
+    one_shot = threading.Lock()
 
     class Handler(BaseHTTPRequestHandler):
         def do_GET(self):
@@ -467,11 +492,31 @@ def serve_dashboard(port: int, open_browser: bool) -> None:
             if self.headers.get("Host") not in allowed_hosts:
                 self.send_error(403)
                 return
-            if self.path.startswith("/status.json"):
+            if self.path.startswith("/screenshot.png"):
+                # The custom header makes a browser refuse the request from any other
+                # site, so only the dashboard itself can start a screenshot.
+                if self.headers.get("X-Girdish") != "1":
+                    self.send_error(403)
+                    return
+                query = urllib.parse.parse_qs(urllib.parse.urlsplit(self.path).query)
+                size = lambda key, default: min(4000, max(300, int(query.get(key, [default])[0] or default)))
+                try:
+                    width, height = size("w", "1500"), size("h", "950")
+                except ValueError:
+                    self.send_error(400)
+                    return
+                page_url = url + "?shot=1" + ("&public=1" if query.get("public") == ["1"] else "")
+                with one_shot:
+                    body = screenshot(page_url, width, height)
+                if body is None:
+                    self.send_error(501, "Screenshots need Edge or Chrome")
+                    return
+                kind = "image/png"
+            elif self.path.startswith("/status.json"):
                 body, kind = json.dumps(collect()).encode(), "application/json"
             elif self.path == "/logo.svg":
                 body, kind = logo, "image/svg+xml"
-            elif self.path in ("/", "/index.html"):
+            elif urllib.parse.urlsplit(self.path).path in ("/", "/index.html"):
                 body, kind = page, "text/html; charset=utf-8"
             else:
                 self.send_error(404)
