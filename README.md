@@ -101,16 +101,22 @@ Two rules that matter throughout:
 The main machine is where the user runs Claude Code or Codex. It can run
 Windows, macOS or Linux, and needs:
 
-- **Python 3.9 or newer.** Try `python3 --version`, then `python --version`
-  and `py -3 --version`. On Windows, `python3` and sometimes `python` are a
-  Microsoft Store placeholder that prints a message instead of a version; use
-  whichever command prints a real version (any 3.9 or newer is fine) everywhere
-  below.
+- **Python 3.9 or newer.** You (the agent) check this and install it if it is
+  missing; tell the user so, so they know it is handled. Try `python3 --version`,
+  then `python --version` and `py -3 --version`. On Windows, `python3` and
+  sometimes `python` are a Microsoft Store placeholder that prints a message
+  instead of a version; use whichever command prints a real version (any 3.9 or
+  newer is fine) everywhere below.
   - Missing on Windows: tell the user this installs Python and accepts the
     winget/Microsoft terms, and with their OK run
     `winget install -e --id Python.Python.3.12 --accept-source-agreements --accept-package-agreements`.
-    Windows may ask the user to click **Yes**, and Python is often only found
-    after the terminal or app is restarted.
+    Windows may ask the user to click **Yes**. Your shell will not find the new
+    `python` until it restarts, so do not ask the user to restart anything:
+    call it by its full path, usually
+    `$env:LOCALAPPDATA\Programs\Python\Python312\python.exe` (PowerShell) or
+    `%LOCALAPPDATA%\Programs\Python\Python312\python.exe` (cmd), check it with
+    `--version`, and use that full path in every command, shortcut and hook
+    below.
   - Missing on macOS: `xcode-select --install` opens a window where the user
     clicks **Install** (**User**).
   - Missing on Linux: the user runs `sudo apt install -y python3` (Ubuntu,
@@ -120,7 +126,8 @@ Windows, macOS or Linux, and needs:
 - **Git**, to clone this repository. Try `git --version`.
   - Missing on Windows: with the user's OK, run
     `winget install -e --id Git.Git --accept-source-agreements --accept-package-agreements`,
-    then restart the terminal or app.
+    then call it by its full path, usually
+    `C:\Program Files\Git\cmd\git.exe`, instead of restarting.
   - Missing on macOS: the same `xcode-select --install` as for Python (**User**).
   - Missing on Linux: the user runs `sudo apt install -y git` in their own
     terminal (**User**). Ubuntu does not include Git from the start.
