@@ -121,7 +121,7 @@ body { font-family: "Segoe UI Variable Text", "Segoe UI", system-ui, -apple-syst
     </div>
     <div class="tools">
       <label class="hide" title="Hides machine names, host names and error text, for sharing"><span class="switch"><input type="checkbox" id="public"><span></span></span>Hide names</label>
-      <button class="shot" id="shot" type="button" title="Saves a picture of this window to Downloads and copies it, ready to share"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 8h3l2-2.5h6L17 8h3v11H4z"/><circle cx="12" cy="13.2" r="3.4"/></svg><span id="shot-text">Screenshot</span></button>
+      <button class="shot" id="shot" type="button" title="Copies a picture of this window, ready to paste into a post or a chat"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 8h3l2-2.5h6L17 8h3v11H4z"/><circle cx="12" cy="13.2" r="3.4"/></svg><span id="shot-text">Screenshot</span></button>
     </div>
     <div class="kpis" id="kpis"></div>
     <div class="room"><div class="title">Room for work now</div><div class="chips" id="room"></div><div class="error" id="error" hidden></div></div>
@@ -154,14 +154,15 @@ $('shot').onclick = () => {
   const png = fetch(`/screenshot.png?w=${innerWidth}&h=${innerHeight}&public=${isPublic ? 1 : 0}`, { headers: { 'X-Girdish': '1' }, cache: 'no-store' })
     .then(r => r.ok ? r.blob() : Promise.reject(new Error(r.status === 501 ? 'Needs Edge or Chrome' : `HTTP ${r.status}`)));
   // Handed to the clipboard straight away, so the click still counts as the user's own.
-  let copied = Promise.reject();
-  try { copied = navigator.clipboard.write([new ClipboardItem({ 'image/png': png })]); } catch {}
-  png.then(blob => {
+  // Only if copying is refused is the picture saved to Downloads instead.
+  let copied;
+  try { copied = navigator.clipboard.write([new ClipboardItem({ 'image/png': png })]); } catch (e) { copied = Promise.reject(e); }
+  copied.then(() => done('Copied, ready to paste'), () => png.then(blob => {
     const a = document.createElement('a');
     a.href = URL.createObjectURL(blob); a.download = `girdish-${new Date().toISOString().slice(0, 10)}.png`; a.click();
     setTimeout(() => URL.revokeObjectURL(a.href), 10000);
-    return copied.then(() => done('Saved and copied'), () => done('Saved to Downloads'));
-  }).catch(e => { copied.catch(() => {}); done(e.message || 'Failed'); });
+    done('Saved to Downloads');
+  })).catch(e => done(e.message || 'Failed'));
 };
 
 function gauge(label, value, sub) {

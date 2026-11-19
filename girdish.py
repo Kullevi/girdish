@@ -443,7 +443,9 @@ def open_window(url: str) -> None:
     browser = app_browser()
     if browser:
         with contextlib.suppress(OSError):
-            subprocess.Popen([browser, f"--app={url}", "--window-size=1500,950"],
+            # On Linux the window class ties the window to girdish.desktop and its icon.
+            extra = ["--class=Girdish"] if sys.platform.startswith("linux") else []
+            subprocess.Popen([browser, f"--app={url}", "--window-size=1500,950", *extra],
                              stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
             return
     webbrowser.open(url)

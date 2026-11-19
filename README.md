@@ -361,12 +361,79 @@ example with `curl -s http://127.0.0.1:8765/`. Tell the user that:
 - the window shows all their machines and refreshes by itself;
 - they can resize it freely, and the cards rearrange and scale to fit;
 - **Hide names** hides machine names, host names and error text, and
-  **Screenshot** saves a picture of the window to Downloads and copies it,
-  ready to share (the picture needs Edge or Chrome);
+  **Screenshot** copies a picture of the window, ready to paste into a post or
+  a chat (it needs Edge or Chrome);
 - they can ask you to "open the Girdish dashboard" again later (running the
   command again just reopens the window if it is already running).
 
 To stop it, end the process that listens on port 8765.
+
+#### A shortcut and opening at login (ask the user)
+
+Ask the user whether they want a Girdish shortcut (desktop, Start menu or
+Dock) and whether the dashboard should open by itself when they log in. Do only
+what they say yes to. Every shortcut runs the same `dashboard` command, which
+starts Girdish if needed and otherwise just opens the window, and every one
+uses the Girdish logo shipped next to `girdish.py`. Fill in the full paths
+below; `PYTHON` is the full path of the Python you used, such as the output of
+`python3 -c "import sys; print(sys.executable)"`.
+
+**Windows** (PowerShell; `pythonw.exe` sits next to `python.exe` and runs
+without a console window):
+
+```
+$py = 'C:\FULL\PATH\pythonw.exe'; $dir = 'C:\Users\NAME\girdish'
+function New-Girdish($file) {
+  $s = (New-Object -ComObject WScript.Shell).CreateShortcut($file)
+  $s.TargetPath = $py; $s.Arguments = "`"$dir\girdish.py`" dashboard"
+  $s.WorkingDirectory = $dir; $s.IconLocation = "$dir\logo.ico"; $s.Save()
+}
+New-Girdish "$env:APPDATA\Microsoft\Windows\Start Menu\Programs\Girdish.lnk"
+New-Girdish "$([Environment]::GetFolderPath('Desktop'))\Girdish.lnk"
+New-Girdish "$env:APPDATA\Microsoft\Windows\Start Menu\Programs\Startup\Girdish.lnk"
+```
+
+The lines are the Start menu, the desktop and opening at login; leave out the
+ones the user did not want. Windows does not let programs pin to the taskbar:
+tell the user to open Start, find Girdish, right-click it and choose **Pin to
+taskbar**.
+
+**macOS** (Terminal) makes a small Girdish app with the logo:
+
+```
+osacompile -o ~/Applications/Girdish.app -e 'do shell script "PYTHON /Users/NAME/girdish/girdish.py dashboard > /dev/null 2>&1 &"'
+cp /Users/NAME/girdish/logo.icns ~/Applications/Girdish.app/Contents/Resources/applet.icns
+touch ~/Applications/Girdish.app
+```
+
+To open it at login:
+`osascript -e 'tell application "System Events" to make login item at end with properties {path:"'$HOME'/Applications/Girdish.app", hidden:false}'`.
+For the Dock, tell the user to drag Girdish from Applications (in their home
+folder) onto the Dock.
+
+**Linux** (a desktop entry, which menus, docks and the desktop all use; the
+window carries the class `Girdish`, so it shows the same logo):
+
+```
+mkdir -p ~/.local/share/applications
+cat > ~/.local/share/applications/girdish.desktop <<EOF
+[Desktop Entry]
+Type=Application
+Name=Girdish
+Comment=Which spare machine has room for work
+Exec=PYTHON /home/NAME/girdish/girdish.py dashboard
+Icon=/home/NAME/girdish/logo.svg
+StartupWMClass=Girdish
+Terminal=false
+Categories=Utility;
+EOF
+```
+
+To open it at login: `mkdir -p ~/.config/autostart && cp ~/.local/share/applications/girdish.desktop ~/.config/autostart/`.
+On the desktop: copy the same file to the folder `xdg-user-dir DESKTOP`
+prints, `chmod +x` it, and on GNOME also run `gio set FILE metadata::trusted true`.
+To keep it in the dock or panel, tell the user to open Girdish from the
+application menu and choose **Add to Favorites** or **Pin** on its icon.
 
 ---
 
