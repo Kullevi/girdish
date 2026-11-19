@@ -435,6 +435,33 @@ prints, `chmod +x` it, and on GNOME also run `gio set FILE metadata::trusted tru
 To keep it in the dock or panel, tell the user to open Girdish from the
 application menu and choose **Add to Favorites** or **Pin** on its icon.
 
+### 8. Give a fix back (Agent, with the user)
+
+If anything during setup did not work as written here and you found what
+fixed it, in Girdish itself or in these instructions, it will help the next
+person too. Tell the user what you fixed, and ask whether they want to send
+it to Girdish as a **pull request**: a proposed change that the maintainers
+read and, if it is right, add to Girdish, with the user named as its author.
+Explain that it is how developers contribute to open source, that it is free
+and public, and that their GitHub user name will show on it.
+
+If they want to:
+
+1. They need a GitHub account (github.com → Sign up) and the GitHub CLI
+   (`gh`; on Windows `winget install GitHub.cli`, on macOS `brew install gh`,
+   on Linux see cli.github.com). The user runs `gh auth login` in their own
+   terminal and signs in in the browser it opens (**User**).
+2. In the Girdish folder: `gh repo fork --remote`, then a new branch, the fix,
+   and a commit whose message says what was wrong and on which system.
+3. `gh pr create --repo Kullevi/girdish`, with a title and a short description
+   in plain words: what happened, what fixed it, and the system it was tested
+   on. Show the user the text before sending it, and give them the link
+   afterwards.
+
+Keep the change to what was actually wrong, never include addresses, user
+names or anything else from their machines, and do not add other
+improvements to the same request.
+
 ---
 
 ## Commands
