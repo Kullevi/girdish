@@ -31,6 +31,10 @@ CONFIG_PATH = Path(os.environ.get("GIRDISH_CONFIG", HERE / "girdish.json"))
 # Next to the config, so it belongs to the same user and is never shared.
 CACHE_PATH = CONFIG_PATH.with_name(".girdish-cache.json")
 LOCK_PATH = CONFIG_PATH.with_name(".girdish-poll.lock")
+PORT_PATH = CONFIG_PATH.with_name(".girdish-port")
+# Tried in order when --port is not given. Windows (Hyper-V, WSL) can silently
+# reserve a whole block of ports after a reboot, so the fallbacks lie far apart.
+DASHBOARD_PORTS = (8765, 8766, 18765, 28765, 38765)
 CACHE_SECONDS = 10
 SSH_CONNECT_TIMEOUT = 5
 PROBE_TIMEOUT = 30
@@ -492,11 +496,54 @@ def dashboard_answers(url: str) -> bool:
         return False
 
 
-def serve_dashboard(port: int, open_browser: bool) -> None:
+def show_error(message: str) -> None:
+    """Prints the error, and also shows it in a dialog when there is no terminal to
+    read it in, such as a start from the shortcut or at login."""
+    if sys.stderr is not None:
+        print(message, file=sys.stderr, flush=True)
+        if sys.stderr.isatty():
+            return
+    with contextlib.suppress(Exception):
+        if sys.platform == "win32":
+            import ctypes
+            ctypes.windll.user32.MessageBoxW(None, message, "Girdish", 0x10)
+        elif sys.platform == "darwin":
+            run_quiet(["osascript", "-e", "on run argv", "-e",
+                       'display alert "Girdish" message (item 1 of argv)', "-e", "end run",
+                       message], timeout=300)
+        elif shutil.which("zenity"):
+            run_quiet(["zenity", "--error", "--title=Girdish", f"--text={message}"], timeout=300)
+        elif shutil.which("notify-send"):
+            run_quiet(["notify-send", "Girdish", message], timeout=10)
+
+
+def bind_dashboard(ports, make_server):
+    """Returns (server, port) for the first port that binds, or (None, port) when a
+    Girdish dashboard already answers there. Raises OSError when none is usable."""
+    recorded = None
+    with contextlib.suppress(OSError, ValueError):
+        recorded = int(PORT_PATH.read_text().strip())
+    if len(ports) > 1 and recorded and dashboard_answers(f"http://127.0.0.1:{recorded}/"):
+        return None, recorded
+    errors = []
+    for port in ports:
+        try:
+            server = make_server(port)
+        except OSError as error:
+            if dashboard_answers(f"http://127.0.0.1:{port}/"):
+                return None, port
+            errors.append(f"{port}: {error}")
+            continue
+        with contextlib.suppress(OSError):
+            PORT_PATH.write_text(str(port))
+        return server, port
+    raise OSError("; ".join(errors))
+
+
+def serve_dashboard(port: int | None, open_browser: bool) -> None:
     page = (HERE / "dashboard.html").read_bytes()
     logo = (HERE / "logo.svg").read_bytes()
-    url = f"http://127.0.0.1:{port}/"
-    allowed_hosts = {f"127.0.0.1:{port}", f"localhost:{port}"}
+    url, allowed_hosts = "", set()  # set once a port is bound
     one_shot = threading.Lock()
 
     class Handler(BaseHTTPRequestHandler):
@@ -548,16 +595,20 @@ def serve_dashboard(port: int, open_browser: bool) -> None:
         # Linux and macOS it only allows a quick restart, so keep it there.
         allow_reuse_address = sys.platform != "win32"
 
+    ports = [port] if port else list(DASHBOARD_PORTS)
     try:
-        server = Server(("127.0.0.1", port), Handler)
+        server, port = bind_dashboard(ports, lambda p: Server(("127.0.0.1", p), Handler))
     except OSError as error:
-        if dashboard_answers(url):
-            print(f"Girdish dashboard is already running on {url}")
-            if open_browser:
-                open_window(url)
-            return
-        sys.exit(f"Cannot start the dashboard on port {port}: {error}. "
-                 f"Try another port with --port.")
+        show_error(f"Girdish could not start its dashboard: no free port ({error}). "
+                   f"Try another port with --port.")
+        sys.exit(1)
+    url = f"http://127.0.0.1:{port}/"
+    allowed_hosts = {f"127.0.0.1:{port}", f"localhost:{port}"}
+    if server is None:
+        print(f"Girdish dashboard is already running on {url}", flush=True)
+        if open_browser:
+            open_window(url)
+        return
     print(f"Girdish dashboard on {url} (Ctrl+C to stop)", flush=True)
     if open_browser:
         open_window(url)
@@ -597,7 +648,8 @@ def main(argv: list[str] | None = None) -> int:
     p.add_argument("--min-free-disk-gb", type=float)
 
     p = sub.add_parser("dashboard", help="open the dashboard in the browser")
-    p.add_argument("--port", type=int, default=8765)
+    p.add_argument("--port", type=int,
+                   help="use only this port (default: 8765, or a fallback if it is taken)")
     p.add_argument("--no-browser", action="store_true")
 
     args = parser.parse_args(argv)

@@ -10,4 +10,5 @@ dashboard.log
 .env
 .girdish-cache.json
 .girdish-poll.lock
+.girdish-port
 .*.tmp

@@ -143,6 +143,48 @@ class Pick(unittest.TestCase):
 FAMILY = "windows" if sys.platform == "win32" else "unix"
 
 
+class DashboardPort(unittest.TestCase):
+    """A taken or reserved port must not stop the dashboard from starting."""
+
+    def setUp(self):
+        import socket
+        import tempfile
+        self.socket = socket
+        self.folder = tempfile.TemporaryDirectory()
+        self.saved_path = girdish.PORT_PATH
+        girdish.PORT_PATH = Path(self.folder.name) / ".girdish-port"
+        self.held = []
+
+    def tearDown(self):
+        for s in self.held:
+            s.close()
+        girdish.PORT_PATH = self.saved_path
+        self.folder.cleanup()
+
+    def bind(self, port):
+        s = self.socket.socket()
+        s.bind(("127.0.0.1", port))
+        s.listen()
+        self.held.append(s)
+        return s
+
+    def free_port(self):
+        return self.bind(0).getsockname()[1]
+
+    def test_falls_back_when_the_first_port_is_taken(self):
+        taken = self.free_port()  # held, and it answers nothing
+        spare = self.free_port()
+        self.held.pop().close()  # free it again for the dashboard
+        server, port = girdish.bind_dashboard([taken, spare], self.bind)
+        self.assertEqual(port, spare)
+        self.assertIsNotNone(server)
+        self.assertEqual(girdish.PORT_PATH.read_text(), str(spare))
+
+    def test_no_usable_port_raises(self):
+        with self.assertRaises(OSError):
+            girdish.bind_dashboard([self.free_port()], self.bind)
+
+
 def run_local_probe():
     """Runs the real probe on this machine, the way a spare machine runs it over SSH."""
     import subprocess
