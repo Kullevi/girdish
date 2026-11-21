@@ -407,8 +407,8 @@ To stop it, end the process that listens on port 8765: on Linux
 
 #### A shortcut and opening at login (ask the user)
 
-Ask the user whether they want a Girdish shortcut (desktop, Start menu or
-Dock) and whether the dashboard should open by itself when they log in. Do only
+Ask the user whether they want a Girdish shortcut (desktop, Start menu, taskbar
+or Dock) and whether the dashboard should open by itself when they log in. Do only
 what they say yes to. Every shortcut runs the same `dashboard` command, which
 starts Girdish if needed and otherwise just opens the window, and every one
 uses the Girdish logo shipped next to `girdish.py`. Fill in the full paths
